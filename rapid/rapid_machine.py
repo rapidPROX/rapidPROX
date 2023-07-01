@@ -20,6 +20,7 @@ from rapid_log import RapidLog
 from prox_ctrl import prox_ctrl
 import os
 import re
+import uuid
 
 class RapidMachine(object):
     """
@@ -129,6 +130,11 @@ class RapidMachine(object):
             RapidLog.debug('{} ({}): cores {} remapped to {}'.format(self.name, self.ip, self.machine_params['cores'], cpus_remapped))
             self.machine_params['cores'] = cpus_remapped
 
+        if 'altcores' in self.machine_params.keys():
+            cpus_remapped = self.remap_cpus(self.machine_params['altcores'])
+            RapidLog.debug('{} ({}): altcores {} remapped to {}'.format(self.name, self.ip, self.machine_params['altcores'], cpus_remapped))
+            self.machine_params['altcores'] = cpus_remapped
+
     def devbind(self):
         # Script to bind the right network interface to the poll mode driver
         for index, dp_port in enumerate(self.dp_ports, start = 1):
@@ -156,9 +162,19 @@ class RapidMachine(object):
                     allow_parameter = 'allow'
                 else:
                     allow_parameter = 'pci-whitelist'
-                eal_line = 'eal=\"--file-prefix {} --{} {}\"\n'.format(
-                        self.name, allow_parameter,
+                eal_line = 'eal=\"--file-prefix {}{} --{} {} --force-max-simd-bitwidth=512'.format(
+                        self.name, str(uuid.uuid4()), allow_parameter,
                         self.machine_params['dp_pci_dev'])
+                looking_for_qat = True
+                index = 0
+                while (looking_for_qat):
+                    if  'qat_pci_dev{}'.format(index) in self.machine_params:
+                        eal_line += ' --{} {}'.format(allow_parameter,
+                            self.machine_params['qat_pci_dev{}'.format(index)])
+                        index += 1
+                    else:
+                        looking_for_qat = False
+                        eal_line += '"\n'
                 LuaFile.write(eal_line)
             else:
                 LuaFile.write("eal=\"\"\n")
@@ -168,6 +184,9 @@ class RapidMachine(object):
             if 'cores' in self.machine_params.keys():
                 LuaFile.write('cores="%s"\n'% ','.join(map(str,
                     self.machine_params['cores'])))
+            if 'altcores' in self.machine_params.keys():
+                LuaFile.write('altcores="%s"\n'% ','.join(map(str,
+                    self.machine_params['altcores'])))
             if 'ports' in self.machine_params.keys():
                 LuaFile.write('ports="%s"\n'% ','.join(map(str,
                     self.machine_params['ports'])))
