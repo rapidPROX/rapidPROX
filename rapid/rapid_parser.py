@@ -16,7 +16,7 @@
 ## limitations under the License.
 ##
 
-from rapid_log import RapidLog 
+from .rapid_log import RapidLog 
 from past.utils import old_div
 try:
     import configparser
@@ -137,8 +137,7 @@ class RapidConfigParser(object):
             for option in options:
                 if option in ['prox_socket','prox_launch_exit','monitor']:
                     machine[option] = testconfig.getboolean(section, option)
-                elif option in ['mcore', 'cores', 'gencores', 'latcores',
-                        'altcores']:
+                elif 'core' in option:
                     machine[option] = ast.literal_eval(testconfig.get(
                         section, option))
                 elif option in ['bucket_size_exp']:
@@ -148,15 +147,16 @@ class RapidConfigParser(object):
                                 "Minimum Value for bucket_size_exp is 11")
                 else:
                     machine[option] = testconfig.get(section, option)
-                for key in ['prox_socket','prox_launch_exit']:
-                   if key not in machine.keys():
-                       machine[key] = True
-            if 'monitor' not in machine.keys():
-                machine['monitor'] = True
+            for key in ['prox_socket','prox_launch_exit','monitor']:
+               if key not in machine.keys():
+                   machine[key] = True
             section = 'M%d'%machine_index[test_machine-1]
             options = config.options(section)
             for option in options:
-                machine[option] = config.get(section, option)
+                if option in ['admin_port','socket_port']:
+                    machine[option] = int(config.get(section, option))
+                else:
+                    machine[option] = config.get(section, option)
             machines.append(dict(machine))
         for machine in machines:
             dp_ports = []

@@ -24,7 +24,7 @@ except ImportError:
 import logging
 from logging import handlers
 
-from rapid_k8s_pod import Pod
+from .rapid_k8s_pod import Pod
 
 class K8sDeployment:
     """Deployment class to create containers for test execution in Kubernetes
@@ -43,7 +43,7 @@ class K8sDeployment:
     _namespace = "rapid-testing"
     _pods = []
 
-    def __init__(self):
+    def __init__(self, kubeconfig = None):
         # Configure logger
         self._log = logging.getLogger("k8srapid")
         self._log.setLevel(logging.DEBUG)
@@ -66,7 +66,7 @@ class K8sDeployment:
 
         # Initialize k8s plugin
         try:
-            config.load_kube_config()
+            config.load_kube_config(config_file = kubeconfig)
         except:
             config.load_incluster_config()
 
@@ -101,7 +101,7 @@ class K8sDeployment:
             self._log.error("No option namespace in DEFAULT section")
             return -1
 
-        self._log.debug("Using namespace %s" % self._total_number_of_pods)
+        self._log.debug("Using namespace %s" % self._namespace)
 
         # Parse [PODx] sections
         for i in range(1, int(self._total_number_of_pods) + 1):
@@ -145,7 +145,15 @@ class K8sDeployment:
             else:
                 pod_dp_subnet = "24"
 
-            pod = Pod(pod_name, self._namespace)
+            # Search for POD nodeport service
+            if self._create_config.has_option("POD%d" % i,
+                                              "nodeport"):
+                pod_nodeport = self._create_config.get(
+                    "POD%d" % i, "nodeport")
+            else:
+                pod_nodeport = None
+
+            pod = Pod(pod_name, pod_nodeport, self._namespace)
             pod.set_nodeselector(pod_nodeselector_hostname)
             pod.set_spec_file_name(pod_spec_file_name)
             pod.set_dp_ip(pod_dp_ip)
@@ -209,6 +217,10 @@ class K8sDeployment:
             self._runtime_config.add_section("M%d" % pod.get_id())
             self._runtime_config.set("M%d" % pod.get_id(),
                                      "admin_ip", pod.get_admin_ip())
+            self._runtime_config.set("M%d" % pod.get_id(),
+                                     "admin_port", pod.get_admin_port())
+            self._runtime_config.set("M%d" % pod.get_id(),
+                                     "socket_port", pod.get_socket_port())
             self._runtime_config.set("M%d" % pod.get_id(),
                                      "dp_mac1", pod.get_dp_mac())
             self._runtime_config.set("M%d" % pod.get_id(),
