@@ -15,6 +15,7 @@
 */
 
 #include <curses.h>
+#include <pthread.h>
 
 #include <rte_cycles.h>
 #include <string.h>

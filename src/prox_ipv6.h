@@ -62,7 +62,7 @@ struct icmpv6_prefix_option {
 	uint32_t preferred_lifetime;
 	uint32_t reserved;
 	struct ipv6_addr prefix;
-};
+} __attribute__((__packed__));
 
 struct icmpv6_option {
 	uint8_t type;

@@ -145,6 +145,9 @@ deps += [cc.find_library('rte_pmd_ring', required: true)]
 else
 deps += [cc.find_library('rte_net_ring', required: true)]
 endif
+if dpdk_version.version_compare('>=24.11.0')
+deps += [cc.find_library('rte_log', required: true)]
+endif
 
 sources = files(
 	'task_init.c', 'handle_aggregator.c', 'handle_nop.c', 'handle_irq.c',

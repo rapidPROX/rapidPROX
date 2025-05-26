@@ -210,8 +210,13 @@ typedef struct icmp_hdr prox_rte_icmp_hdr;
 #define PROX_RTE_TCP_FIN_FLAG RTE_TCP_FIN_FLAG
 #define PROX_RTE_TCP_RST_FLAG RTE_TCP_RST_FLAG
 #define PROX_RTE_TCP_ACK_FLAG RTE_TCP_ACK_FLAG
+#if RTE_VERSION < RTE_VERSION_NUM(24,11,0,0)
 #define PROX_RTE_IP_ICMP_ECHO_REPLY RTE_IP_ICMP_ECHO_REPLY
 #define PROX_RTE_IP_ICMP_ECHO_REQUEST RTE_IP_ICMP_ECHO_REQUEST
+#else
+#define PROX_RTE_IP_ICMP_ECHO_REPLY RTE_ICMP_TYPE_ECHO_REPLY
+#define PROX_RTE_IP_ICMP_ECHO_REQUEST RTE_ICMP_TYPE_ECHO_REQUEST
+#endif
 
 #define prox_rte_ether_addr_copy rte_ether_addr_copy
 #define prox_rte_eth_random_addr rte_eth_random_addr

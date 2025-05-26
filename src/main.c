@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <curses.h>
+#include <pthread.h>
 
 #include <rte_cycles.h>
 #include <rte_atomic.h>

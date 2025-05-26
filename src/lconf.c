@@ -14,6 +14,7 @@
 // limitations under the License.
 */
 
+#include <pthread.h>
 #include "prox_malloc.h"
 #include "lconf.h"
 #include "rx_pkt.h"
