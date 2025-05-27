@@ -1,1 +1,4 @@
+/*
+// Copyright (c) 2023-2025 rapidPROX contributors
+*/
 const char *git_version="@GIT_VERSION@";

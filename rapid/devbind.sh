@@ -1,3 +1,7 @@
+##
+## Copyright (c) 2023-2025 rapidPROX contributors
+##
+
 link="$(sudo ip -o link | grep MACADDRESS |cut -d":" -f 2)"
 if [ -n "$link" ];
 then

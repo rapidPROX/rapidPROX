@@ -2,6 +2,10 @@
  
 # pylint: disable=missing-docstring
  
+##
+## Copyright (c) 2023-2025 rapidPROX contributors
+##
+
 import setuptools
  
 setuptools.setup(

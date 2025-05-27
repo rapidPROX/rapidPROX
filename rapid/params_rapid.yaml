@@ -1,3 +1,6 @@
+##
+## Copyright (c) 2023-2025 rapidPROX contributors
+##
 parameters:
   public_net_name: admin_floating_net
   data_net_name: dataplane-network

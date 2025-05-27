@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 ##
+## Copyright (c) 2023-2025 rapidPROX contributors
 ## Copyright (c) 2010-2017 Intel Corporation
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -106,7 +107,8 @@ Shows the full script documentation.
 
 =head1 AUTHOR
 
- Copyright(c) 2010-2017 Intel Corporation.
+ Copyright (c) 2023-2025 rapidPROX contributors
+ Copyright (c) 2010-2017 Intel Corporation
  All rights reserved.
 
 =cut

@@ -1,3 +1,6 @@
+##
+## Copyright (c) 2023-2025 rapidPROX contributors
+##
 apiVersion: v2
 name: rapid
 description: A Helm chart for deploying RAPID test scripts and environment

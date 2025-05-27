@@ -1,3 +1,6 @@
+##
+## Copyright (c) 2023-2025 rapidPROX contributors
+##
 #Keep the options sorted alphabetically
 option('bng_qinq', type: 'feature', value: 'enabled')
 option('crc', type: 'string', value: 'hard')

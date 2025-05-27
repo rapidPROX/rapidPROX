@@ -1,3 +1,6 @@
+##
+## Copyright (c) 2023-2025 rapidPROX contributors
+##
 # Patterns to ignore when building packages.
 # This supports shell glob matching, relative path matching, and
 # negation (prefixed with !). Only one pattern per line.

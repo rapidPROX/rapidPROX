@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ##
+## Copyright (c) 2023-2025 rapidPROX contributors
 ## Copyright (c) 2010-2017 Intel Corporation
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");

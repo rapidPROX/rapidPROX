@@ -1,3 +1,7 @@
+##
+## Copyright (c) 2023-2025 rapidPROX contributors
+##
+
 [Unit]
 Description=Check PROX system setup (isolated_cores, vfio)
 DefaultDependencies=no
