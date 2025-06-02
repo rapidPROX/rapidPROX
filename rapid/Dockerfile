@@ -19,75 +19,97 @@
 # Build all components in separate builder image #
 ##################################################
 
-FROM ubuntu:20.04 as builder
+FROM ubuntu:24.04 as builder
+ENV DEBIAN_FRONTEND=noninteractive
 
-ARG DPDK_VERSION=22.07
+# Install Dependencies
+# libibverbs-dev is to support Mellenox cards (no OFED installation needed) 
+RUN apt-get update && apt -y install git wget \
+	gcc unzip libpcap-dev libncurses5-dev \
+	libedit-dev liblua5.3-dev linux-headers-generic iperf3 pciutils \
+	libnuma-dev vim tuna make driverctl openssh-server sudo \
+	meson python3-pyelftools pkg-config nasm libssl-dev libibverbs-dev
+
+ARG DPDK_VERSION=24.11.2
 ENV DPDK_VERSION=${DPDK_VERSION}
 
 ARG BUILD_DIR="/opt/rapid"
 ENV BUILD_DIR=${BUILD_DIR}
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install Dependencies
-RUN apt update && apt -y install git wget gcc unzip libpcap-dev libncurses5-dev \
-        libedit-dev liblua5.3-dev linux-headers-generic iperf3 pciutils \
-        libnuma-dev vim tuna wireshark make driverctl openssh-server sudo \
-        meson python3-pyelftools pkg-config
-
 WORKDIR ${BUILD_DIR}
 
+# Define the version of Multi Buffer Library by selecting one of the following lines
+ARG MULTI_BUFFER_LIB_VER='None'
+#ARG MULTI_BUFFER_LIB_VER=1.3
+#ARG MULTI_BUFFER_LIB_VER=1.5
+# End of the Multi Buffer version selection
+
+# Install multi-buffer library
+RUN if [ ${MULTI_BUFFER_LIB_VER} != None ] ; then \
+	wget https://github.com/01org/intel-ipsec-mb/archive/v${MULTI_BUFFER_LIB_VER}.zip \
+	&& unzip v${MULTI_BUFFER_LIB_VER}.zip \
+	&& cd ${BUILD_DIR}/intel-ipsec-mb-${MULTI_BUFFER_LIB_VER} \
+	&& make \
+	&& make install \ 
+	&& cd ${BUILD_DIR};\ 
+    fi
+
 # Install DPDK
-RUN wget http://fast.dpdk.org/rel/dpdk-${DPDK_VERSION}.tar.xz \
-    && tar -xf ./dpdk-${DPDK_VERSION}.tar.xz \
-    && cd dpdk-${DPDK_VERSION} \
-    && meson build -Dlibdir=lib/x86_64-linux-gnu -Denable_driver_sdk=true \
-    && ninja -C build install
+RUN git clone https://github.com/DPDK/dpdk.git
+WORKDIR ${BUILD_DIR}/dpdk
+RUN git checkout v${DPDK_VERSION}
+RUN meson build -Dlibdir=lib/x86_64-linux-gnu -Denable_driver_sdk=true \
+	-Ddefault_library=shared \
+	-Dcpu_instruction_set=generic \
+	& ninja -C build install
 
 WORKDIR ${BUILD_DIR}
 
 # Install Prox
-RUN git clone https://gerrit.opnfv.org/gerrit/samplevnf \
-    && cd samplevnf/VNFs/DPPD-PROX \
-    && COMMIT_ID=$(git rev-parse HEAD) \
-    && echo "${COMMIT_ID}" > ${BUILD_DIR}/commit_id \
-    && meson build \
-    && ninja -C build \
-    && cp ${BUILD_DIR}/samplevnf/VNFs/DPPD-PROX/build/prox ${BUILD_DIR}/prox
+RUN git clone https://github.com/rapidPROX/rapidPROX.git \
+	&& cd rapidPROX/src \
+	&& COMMIT_ID=$(git rev-parse HEAD) \
+	&& echo "${COMMIT_ID}" > ${BUILD_DIR}/commit_id \
+	&& meson build \
+	&& ninja -C build \
+	&& cp ${BUILD_DIR}/rapidPROX/rapid/start.sh ${BUILD_DIR}/start.sh \
+	&& cp ${BUILD_DIR}/rapidPROX/rapid/rapid_rsa_key.pub ${BUILD_DIR}/rapid_rsa_key.pub \
+	&& cp ${BUILD_DIR}/rapidPROX/src/build/prox ${BUILD_DIR}/prox
 
 # Build and copy port info app
-WORKDIR ${BUILD_DIR}/samplevnf/VNFs/DPPD-PROX/helper-scripts/rapid/port_info
+WORKDIR ${BUILD_DIR}/rapidPROX/rapid/port_info
 RUN meson build \
-    && ninja -C build \
-    && cp ${BUILD_DIR}/samplevnf/VNFs/DPPD-PROX/helper-scripts/rapid/port_info/build/port_info_app ${BUILD_DIR}/port_info_app
+	&& ninja -C build \
+	&& cp ${BUILD_DIR}/rapidPROX/rapid/port_info/build/port_info_app ${BUILD_DIR}/port_info_app
 
 RUN ldconfig && pkg-config --modversion libdpdk > ${BUILD_DIR}/dpdk_version
+
 # Create Minimal Install
 RUN ldd ${BUILD_DIR}/prox | awk '$2 ~ /=>/ {print $3}' >> ${BUILD_DIR}/list_of_install_components \
-    && echo "${BUILD_DIR}/prox" >> ${BUILD_DIR}/list_of_install_components \
-    && echo "${BUILD_DIR}/port_info_app" >> ${BUILD_DIR}/list_of_install_components \
-    && echo "${BUILD_DIR}/commit_id" >> ${BUILD_DIR}/list_of_install_components \
-    && echo "${BUILD_DIR}/dpdk_version" >> ${BUILD_DIR}/list_of_install_components \
-    && find /usr/local/lib/x86_64-linux-gnu -not -path '*/\.*' >> ${BUILD_DIR}/list_of_install_components \
-    && tar -czvhf ${BUILD_DIR}/install_components.tgz -T ${BUILD_DIR}/list_of_install_components
+	&& echo "${BUILD_DIR}/prox" >> ${BUILD_DIR}/list_of_install_components \
+	&& echo "${BUILD_DIR}/port_info_app" >> ${BUILD_DIR}/list_of_install_components \
+	&& echo "${BUILD_DIR}/commit_id" >> ${BUILD_DIR}/list_of_install_components \
+	&& echo "${BUILD_DIR}/dpdk_version" >> ${BUILD_DIR}/list_of_install_components \
+	&& echo "${BUILD_DIR}/start.sh" >> ${BUILD_DIR}/list_of_install_components \
+	&& echo "${BUILD_DIR}/rapid_rsa_key.pub" >> ${BUILD_DIR}/list_of_install_components \
+	&& find /usr/local/lib/x86_64-linux-gnu -not -path '*/\.*' >> ${BUILD_DIR}/list_of_install_components \
+	&& tar -czvhf ${BUILD_DIR}/install_components.tgz -T ${BUILD_DIR}/list_of_install_components
 
-#############################
-# Create slim runtime image #
-#############################
-FROM ubuntu:20.04
+################################
+# Create smaller runtime image #
+################################
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Runtime  Dependencies
+# Install required dynamically linked libraries + required packages
+RUN apt-get update
+RUN apt -y install unzip sudo openssh-server liblua5.3-dev libibverbs-dev
+#RUN apt -y install libatomic1
 
 ARG BUILD_DIR="/opt/rapid"
 ENV BUILD_DIR=${BUILD_DIR}
 
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install Runtime  Dependencies
-RUN apt update -y
-# Install required dynamically linked libraries + required packages
-RUN apt -y install sudo openssh-server libatomic1
-
 COPY --from=builder ${BUILD_DIR}/install_components.tgz ${BUILD_DIR}/install_components.tgz
-
 WORKDIR /
 RUN tar -xvf ${BUILD_DIR}/install_components.tgz --skip-old-files
 RUN ldconfig
@@ -95,26 +117,16 @@ RUN rm ${BUILD_DIR}/install_components.tgz
 
 # Expose SSH and PROX ports
 EXPOSE 22 8474
-
-RUN useradd -rm -d /home/rapid -s /bin/bash -g root -G sudo -u 1000 rapid \
-    && chmod 777 ${BUILD_DIR} \
-    && echo 'rapid:rapid' | chpasswd \
-    && mkdir /home/rapid/.ssh
-
+#RUN useradd -rm -d /home/rapid -s /bin/bash -g root -G sudo -u 1000 rapid \
+RUN useradd -rm -d /home/rapid -s /bin/bash -g root -G sudo rapid \
+	&& chmod 777 ${BUILD_DIR} \
+	&& echo 'rapid:rapid' | chpasswd \
+	&& mkdir /home/rapid/.ssh \
 # Copy SSH keys
-COPY ./rapid_rsa_key.pub /home/rapid/.ssh/authorized_keys
-COPY ./rapid_rsa_key.pub /root/.ssh/authorized_keys
-
-RUN chown rapid:root /home/rapid/.ssh/authorized_keys \
- && chmod 600 /home/rapid/.ssh/authorized_keys \
- && chown root:root /root/.ssh/authorized_keys \
- && chmod 600 /root/.ssh/authorized_keys
-
-#RUN apt-get clean && apt autoremove --purge
-RUN apt-get autoremove -y && apt-get clean all && rm -rf /var/cache/apt
-
+	&& cp ${BUILD_DIR}/rapid_rsa_key.pub /home/rapid/.ssh/authorized_keys \
+	&& chown rapid:root /home/rapid/.ssh/authorized_keys \
+	&& chmod 600 /home/rapid/.ssh/authorized_keys \
 # Copy startup script
-COPY ./start.sh /start.sh
-RUN chmod +x /start.sh
-
+	&& cp ${BUILD_DIR}/start.sh /start.sh \
+	&& chmod +x /start.sh
 ENTRYPOINT ["/start.sh"]
