@@ -17,8 +17,8 @@
 ## limitations under the License.
 ##
 
-from .rapid_log import RapidLog 
-from .rapid_machine import RapidMachine
+from rapid_log import RapidLog 
+from rapid_machine import RapidMachine
 from math import ceil, log2
 
 
@@ -84,24 +84,6 @@ class RapidGeneratorMachine(RapidMachine):
     def get_cores(self):
         return (self.machine_params['gencores'] +
                 self.machine_params['latcores'])
-
-    def remap_all_cpus(self):
-        """Convert relative cpu ids for different parameters (gencores, latcores)
-        """
-        super().remap_all_cpus()
-
-        if self.cpu_mapping is None:
-            return
-
-        if 'gencores' in self.machine_params.keys():
-            cpus_remapped = super().remap_cpus(self.machine_params['gencores'])
-            RapidLog.debug('{} ({}): gencores {} remapped to {}'.format(self.name, self.ip, self.machine_params['gencores'], cpus_remapped))
-            self.machine_params['gencores'] = cpus_remapped
-
-        if 'latcores' in self.machine_params.keys():
-            cpus_remapped = super().remap_cpus(self.machine_params['latcores'])
-            RapidLog.debug('{} ({}): latcores {} remapped to {}'.format(self.name, self.ip, self.machine_params['latcores'], cpus_remapped))
-            self.machine_params['latcores'] = cpus_remapped
 
     def generate_lua(self):
         appendix = 'bucket_size_exp="{}"\n'.format(self.bucket_size_exp)

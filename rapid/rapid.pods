@@ -17,14 +17,21 @@
 
 [DEFAULT]
 total_number_of_pods=2
-namespace=rapid-testing
+#namespace=rapid-testing
 
 [POD1]
 nodeSelector_hostname=k8s-node1
 dp_ip=192.168.30.11
 dp_subnet=24
+#spec_file_name=prox.yaml
+#nodeport=true
+#simd_bitwidth=512
 
 [POD2]
 nodeSelector_hostname=k8s-node2
 dp_ip=192.168.30.12
 dp_subnet=24
+
+##Use the GENERATOR section if the generator pods are already deployed
+##[GENERATOR]
+##generator-config=generator.env

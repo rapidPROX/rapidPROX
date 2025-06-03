@@ -32,17 +32,22 @@ def main():
     argparser.add_argument("-k", "--kubeconfig", type = str, required = False,
                            default = None,
                            help = "Specify the kubeconfig to be used")
-
     argparser.add_argument("-c", "--clean", action = "store_true",
                            help = "Terminate pod-rapid-* PODs. "
                            "Clean up cluster before or after the testing.")
+    argparser.add_argument("-p", "--pod", type = str, required = False,
+                           default = CREATE_CONFIG_FILE_NAME,
+                           help = "Specify the file with pod info")
+    argparser.add_argument("-e", "--env", type = str, required = False,
+                           default = RUN_CONFIG_FILE_NAME,
+                           help = "Specify the env file")
     args = argparser.parse_args()
 
     # Create a new deployment
     deployment = K8sDeployment(kubeconfig = args.kubeconfig)
 
     # Load config file with test environment description
-    deployment.load_create_config(CREATE_CONFIG_FILE_NAME)
+    deployment.load_create_config(args.pod)
 
     if args.clean:
         deployment.delete_pods()
@@ -52,7 +57,7 @@ def main():
     deployment.create_pods()
 
     # Save config file for runrapid script
-    deployment.save_runtime_config(RUN_CONFIG_FILE_NAME)
+    deployment.save_runtime_config(args.env)
 
 if __name__ == "__main__":
     main()

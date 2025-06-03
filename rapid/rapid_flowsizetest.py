@@ -23,23 +23,28 @@ import copy
 from math import ceil
 from statistics import mean
 from past.utils import old_div
-from .rapid_log import RapidLog
-from .rapid_log import bcolors
-from .rapid_test import RapidTest
+from rapid_log import RapidLog
+from rapid_log import bcolors
+from rapid_test import RapidTest
 inf = float("inf")
 
 class FlowSizeTest(RapidTest):
     """
     Class to manage the flowsizetesting
     """
-    def __init__(self, test_param, lat_percentile, runtime, testname,
-            environment_file, gen_machine, sut_machine, background_machines, sleep_time):
-        super().__init__(test_param, runtime, testname, environment_file)
+    def __init__(self, test_param, test_params, gen_machine, sut_machine,
+            background_machines):                                                               
+        if 'push_gw' in test_params.keys():                                                     
+            push_gw = test_params['push_gw']
+        super().__init__(test_param, test_params['runtime'], test_params['TestName'],
+                test_params['environment_file'], push_gw)            
         self.gen_machine = gen_machine
         self.sut_machine = sut_machine
         self.background_machines = background_machines
         self.test['lat_percentile'] = lat_percentile
         self.test['sleep_time'] = sleep_time
+        if 'power_helper' in test_params.keys():
+            self.test['power_helper'] = test_params['power_helper']
         if self.test['test'] == 'TST009test':
             # This test implements some of the testing as defined in
             # https://docbox.etsi.org/ISG/NFV/open/Publications_pdf/Specs-Reports/NFV-TST%20009v3.2.1%20-%20GS%20-%20NFVI_Benchmarks.pdf
@@ -160,7 +165,7 @@ class FlowSizeTest(RapidTest):
             RapidLog.info(('| Flows  | Speed requested  | Gen by core | Sent by'
                 ' NIC | Fwrd by SUT | Rec. by core           | Avg. Lat.|{:.0f}'
                 ' Pcentil| Max. Lat.|   Sent    |  Received |    Lost   | Total'
-                ' Lost|L.Ratio|Mis-ordered|Time').format(self.test['lat_percentile']*100))
+                ' Lost|L.Ratio|Mis-ordered|Time|').format(self.test['lat_percentile']*100))
             RapidLog.info('+' + '-' * 8 + '+' + '-' * 18 + '+' + '-' * 13 +
                     '+' + '-' * 13 + '+' + '-' * 13 + '+' + '-' * 24 + '+' +
                     '-' * 10 + '+' + '-' * 10 + '+' + '-' * 10 + '+' + '-' * 11
@@ -305,7 +310,7 @@ class FlowSizeTest(RapidTest):
                     end_data, end_prefix))
                 if end_data['avg_bg_rate']:
                     tot_avg_rx_rate = end_data['pps_rx'] + (end_data['avg_bg_rate'] * len(self.background_machines))
-                    endtotaltrafficrate = '|        | Total amount of traffic received by all generators during this test: {:>4.3f} Gb/s {:7.3f} Mpps {} |'.format(RapidTest.get_speed(tot_avg_rx_rate,size) , tot_avg_rx_rate, ' '*84)
+                    endtotaltrafficrate = '|        | Total amount of traffic received by all generators during this test: {:>4.3f} Gb/s {:7.3f} Mpps {} |'.format(RapidTest.get_speed(tot_avg_rx_rate,size) , tot_avg_rx_rate, ' '*95)
                     RapidLog.info (endtotaltrafficrate)
                 if endwarning:
                     RapidLog.info (endwarning)
@@ -316,12 +321,13 @@ class FlowSizeTest(RapidTest):
                     end_data['Flows'] = flow_number
                     end_data['Size'] = size
                     end_data['RequestedSpeed'] = RapidTest.get_pps(end_data['speed'] ,size)
+                    end_data['TotalTrafficRate'] = RapidTest.get_speed(tot_avg_rx_rate ,size) * 1000
                     result_details = self.post_data(end_data)
+                    result_details['data_push'] = self.data_push
                     RapidLog.debug(result_details)
                 RapidLog.info('+' + '-' * 8 + '+' + '-' * 18 + '+' + '-' * 13 +
                     '+' + '-' * 13 + '+' + '-' * 13 + '+' + '-' * 24 + '+' +
                     '-' * 10 + '+' + '-' * 10 + '+' + '-' * 10 + '+' + '-' * 11
                     + '+' + '-' * 11 + '+' + '-' * 11 + '+'  + '-' * 11 +  '+'
-                    + '+' + '-' * 11 + '+'
-                    + '-' * 7 + '+' + '-' * 4 + '+')
+                    + '-' * 7 + '+' + '-' * 11 + '+' + '-' * 4 + '+')
         return (TestResult, result_details)

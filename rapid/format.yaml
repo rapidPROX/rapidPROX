@@ -1,34 +1,24 @@
 ##
 ## Copyright (c) 2023-2025 rapidPROX contributors
 ##
-;Format: PushGateway
+Format: PushGateway
 ;Format: Xtesting
 ;URL:
   part1: http://testresults.opnfv.org/test/api/v1/results
-;URL:
-  part1: http://192.168.36.61:9091/metrics/job/
-  part2: test
-  part3: /instance/
-  part4: environment_file
-;FlowsizeTest:
-  Flows: Flows 
-  Size: Size
-  RequestedSpeed: RequestedSpeed
-  CoreGenerated: pps_req_tx
-  SentByNIC: pps_tx
-  FwdBySUT: pps_sut_tx
-  RevByCore: pps_rx
-  AvgLatency: lat_avg
-  PCTLatency: lat_perc
-  MinLatency: lat_min
-  MaxLatency: lat_max
-  Sent: abs_tx
-  Received: abs_rx
-  Lost: abs_dropped
-  Misordered: mis_ordered
-  Extent: extent
-  Duplicated: duplicate
-FlowSizeTest:
+URL:
+  part1: /metrics/job/rapid/
+FlowSizeTest:                           
+  Flows: Flows                                                                                  
+  Size: Size                                                                                    
+  Sent: abs_tx                      
+  Total: TotalTrafficRate                                                                       
+  RevByCore: pps_rx                                                                             
+  PCTLatency: lat_perc               
+  Lost: abs_dropped                                                                             
+  SystemPower: Sys                                                                              
+  CPUPower: Cpu
+  RAMPower: Ram   
+;FlowSizeTest:
   Environment: environment_file
   Test: test
   Flows: Flows 
