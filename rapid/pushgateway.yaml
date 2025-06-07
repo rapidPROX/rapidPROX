@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pushgateway
+spec:
+  containers:
+  - name: pushgateway
+    image: prom/pushgateway:latest
+    ports:
+    - containerPort: 9091

@@ -24,8 +24,8 @@ import time
 import os
 import copy
 from past.utils import old_div
-from .rapid_log import RapidLog
-from .rapid_log import bcolors
+from rapid_log import RapidLog
+from rapid_log import bcolors
 inf = float("inf")
 from datetime import datetime as dt
 
@@ -35,17 +35,31 @@ class RapidTest(object):
     """
     Class to manage the testing
     """
-    def __init__(self, test_param, runtime, testname, environment_file ):
+    def __init__(self, test_param, runtime, testname, environment_file,
+            push_gw = None ):
         self.test = test_param
         self.test['runtime'] = runtime
         self.test['testname'] = testname
         self.test['environment_file'] = environment_file
+        self.test['push_gw'] = push_gw
         if 'maxr' not in self.test.keys():
             self.test['maxr'] = 1
         if 'maxz' not in self.test.keys():
             self.test['maxz'] = inf
         with open(os.path.join(_CURR_DIR,'format.yaml')) as f:
             self.data_format = yaml.load(f, Loader=yaml.FullLoader)
+        if self.test['push_gw']:
+            self.data_push = 'http://' + self.test['push_gw']['push_gw_ip'] + \
+                    ':' + self.test['push_gw']['push_gw_port']
+            self.URL = self.data_push
+        else:
+            self.URL = ''
+            self.data_push = None
+        if 'URL' in self.data_format.keys():
+            for value in self.data_format['URL'].values():
+                self.URL = self.URL + value
+        else:
+            self.URL = None
 
     @staticmethod
     def get_percentageof10Gbps(pps_speed,size):
@@ -114,18 +128,15 @@ class RapidTest(object):
         var = copy.deepcopy(self.data_format)
         self.parse_data_format_dict(var, variables)
         if var.keys() >= {'URL', test_type, 'Format'}:
-            URL=''
-            for value in var['URL'].values():
-                URL = URL + value
             HEADERS = {'X-Requested-With': 'Python requests', 'Content-type': 'application/rapid'}
             if var['Format'] == 'PushGateway':
                 data = "\n".join("{} {}".format(k, v) for k, v in var[test_type].items()) + "\n"
-                response = requests.post(url=URL, data=data,headers=HEADERS)
+                response = requests.post(url=self.URL, data=data,headers=HEADERS)
             elif var['Format'] == 'Xtesting':
                 data = var[test_type]
-                response = requests.post(url=URL, json=data)
+                response = requests.post(url=self.URL, json=data)
             if (response.status_code >= 300):
-                RapidLog.info('Cannot send metrics to {}'.format(URL))
+                RapidLog.info('Cannot send metrics to {}'.format(self.URL))
                 RapidLog.info(data)
         return (var[test_type])
 

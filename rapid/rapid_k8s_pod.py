@@ -20,7 +20,7 @@ import time, yaml
 import logging
 from kubernetes import client, config
 
-from .rapid_sshclient import SSHClient
+from rapid_sshclient import SSHClient
 
 class Pod:
     """Class which represents test pods.
@@ -46,6 +46,7 @@ class Pod:
     _sriov_vf_mac = None
     _ssh_port = 22
     _socket_port = 8474
+    _push_gw_port = 9091
 
     def __init__(self, name, pod_nodeport = None, namespace = "default",
             logger_name = "k8srapid"):
@@ -65,22 +66,68 @@ class Pod:
 
     def create_from_yaml(self):
         """Load POD description from yaml file.
-        """
+                """
         with open(path.join(path.dirname(__file__),
             self._spec_filename)) as yaml_file:
             self.body = yaml.safe_load(yaml_file)
 
             self.body["metadata"]["name"] = self._name
-            self.body["metadata"]["labels"] = {'app': self._pod_nodeport}
+            if self._pod_nodeport: 
+                self._pod_nodeport = self._name
+                self.body["metadata"]["labels"] = {'app': self._name}
+                metadata = client.V1ObjectMeta(name=self._name)
+                if self._name == "pushgateway":
+                    ports = [
+                        client.V1ServicePort(
+                        name = "push-gw-port",
+                        port = self._push_gw_port,
+                        target_port = self._push_gw_port,
+                        protocol="TCP"),
+                        ]
+                else:
+                    ports = [
+                        client.V1ServicePort(
+                        name = "control-port",
+                        port=self._ssh_port,
+                        target_port=self._ssh_port,
+                        protocol="TCP"),
+                        client.V1ServicePort(
+                        name = "socket-port",
+                        port=self._socket_port,
+                        target_port=self._socket_port,
+                        protocol="TCP"),
+                        ]
+                spec = client.V1ServiceSpec(
+                        selector={"app": self._name},
+                        ports = ports,
+                        type="NodePort",)
+                service = client.V1Service(metadata=metadata, spec=spec)
+            else:
+                self.body["metadata"]["labels"] = {'app': self._pod_nodeport}
 
             if (self._nodeSelector_hostname is not None):
                 if ("nodeSelector" not in self.body["spec"]):
                     self.body["spec"]["nodeSelector"] = {}
                 self.body["spec"]["nodeSelector"]["kubernetes.io/hostname"] = \
                         self._nodeSelector_hostname
-            self._log.debug("Creating POD, body:\n%s" % self.body)
 
+            if (self._ImageRepository is not None):
+                try:
+                    if 'ImageRepository/' in self.body['spec']['containers'][0]['image']:
+                        self.body['spec']['containers'][0]['image'] = \
+                                self.body['spec']['containers'][0]['image'].replace(
+                                'ImageRepository/', self._ImageRepository)
+                except KeyError:
+                    pass
+
+            if self._name != "pushgateway":
+#                self.body['metadata']['annotations'] = {'k8s.v1.cni.cncf.io/networks': self._namespace + '/sriov-network-rapid'}
+                self.body['metadata']['annotations'] = {'k8s.v1.cni.cncf.io/networks': 'sriov-network-operator/sriov-network-rapid'}
+            self._log.debug("Creating POD, body:\n%s" % self.body)
             try:
+                if self._pod_nodeport:
+                    self.k8s_CoreV1Api.create_namespaced_service(
+                            namespace=self._namespace, body=service)
                 self.k8s_CoreV1Api.create_namespaced_pod(body = self.body,
                                                 namespace = self._namespace)
             except client.rest.ApiException as e:
@@ -102,16 +149,20 @@ class Pod:
 
     def update_admin_ip(self):
         """Check for admin IP address assigned by k8s.
-        """
+                """
         try:
             if self._pod_nodeport:
-                service= self.k8s_CoreV1Api.read_namespaced_service_status(name = self._pod_nodeport, namespace = self._namespace)
-                self._admin_ip = service.spec.cluster_ip
+                api_response = self.k8s_CoreV1Api.read_namespaced_pod(name = self._name, namespace = self._namespace)
+                service = self.k8s_CoreV1Api.read_namespaced_service_status(name = self._pod_nodeport, namespace = self._namespace)
+                self._admin_ip = api_response.status.host_ip
+                ##                self._admin_ip = service.spec.cluster_ip
                 for service_port in service.spec.ports:
                     if service_port.name == 'control-port':
                         self._ssh_port = service_port.node_port
                     if service_port.name == 'socket-port':
                         self._socket_port = service_port.node_port
+                    if service_port.name == 'push-gw-port':
+                        self._push_gw_port = service_port.node_port
             else:
                 pod = self.k8s_CoreV1Api.read_namespaced_pod_status(name = self._name, namespace = self._namespace)
                 self._admin_ip = pod.status.pod_ip
@@ -151,6 +202,9 @@ class Pod:
 
     def get_socket_port(self):
         return self._socket_port
+
+    def get_push_gw_port(self):
+        return self._push_gw_port
 
     def get_dp_ip(self):
         return self._dp_ip
@@ -257,14 +311,34 @@ class Pod:
 
         self._log.debug("MAC %s" % self._sriov_vf_mac)
 
+    def set_admin_ip(self, admin_ip):
+        self._admin_ip = admin_ip
+
+    def set_admin_port(self, admin_port):
+        self._ssh_port = admin_port
+
+    def set_socket_port(self, socket_port):
+        self._socket_port = socket_port
+
+    def set_push_gw_port(self, gw_port):
+        self._push_gw_port = gw_port
+
     def set_dp_ip(self, dp_ip):
         self._dp_ip = dp_ip
+
+    def set_dp_mac(self, dp_mac):
+        self._sriov_vf_mac = dp_mac
 
     def set_dp_subnet(self, dp_subnet):
         self._dp_subnet = dp_subnet
 
     def set_id(self, pod_id):
         self._id = pod_id
+
+    def set_imagerepository(self, ImageRepository):
+        """Set hostname on which POD will be executed.
+        """
+        self._ImageRepository = ImageRepository
 
     def set_nodeselector(self, hostname):
         """Set hostname on which POD will be executed.

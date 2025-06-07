@@ -17,7 +17,7 @@
 ## limitations under the License.
 ##
 
-from .rapid_log import RapidLog 
+from rapid_log import RapidLog 
 from past.utils import old_div
 try:
     import configparser
@@ -70,6 +70,13 @@ class RapidConfigParser(object):
             test_params['password'] = config.get('ssh', 'password')
         else:
             test_params['password'] = None
+        test_params['push_gw'] = None
+        if config.has_option('pushgateway', 'push_gw_ip'):
+            if config.has_option('pushgateway', 'push_gw_port'):
+                test_params['push_gw'] = {
+                        'push_gw_ip' : config.get('pushgateway', 'push_gw_ip'),
+                        'push_gw_port' : config.get('pushgateway', 'push_gw_port')
+                        }
         test_params['total_number_of_machines'] = int(config.get('rapid',
             'total_number_of_machines'))
         tests = []

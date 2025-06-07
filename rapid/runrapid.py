@@ -27,18 +27,18 @@ import os
 import sys
 import concurrent.futures
 from concurrent.futures import ALL_COMPLETED
-from .rapid_cli import RapidCli
-from .rapid_log import RapidLog
-from .rapid_parser import RapidConfigParser
-from .rapid_defaults import RapidDefaults
-from .rapid_machine import RapidMachine
-from .rapid_generator_machine import RapidGeneratorMachine
-from .rapid_flowsizetest import FlowSizeTest
-from .rapid_corestatstest import CoreStatsTest
-from .rapid_portstatstest import PortStatsTest
-from .rapid_impairtest import ImpairTest
-from .rapid_irqtest import IrqTest
-from .rapid_warmuptest import WarmupTest
+from rapid_cli import RapidCli
+from rapid_log import RapidLog
+from rapid_parser import RapidConfigParser
+from rapid_defaults import RapidDefaults
+from rapid_machine import RapidMachine
+from rapid_generator_machine import RapidGeneratorMachine
+from rapid_flowsizetest import FlowSizeTest
+from rapid_corestatstest import CoreStatsTest
+from rapid_portstatstest import PortStatsTest
+from rapid_impairtest import ImpairTest
+from rapid_irqtest import IrqTest
+from rapid_warmuptest import WarmupTest
 
 class RapidTestManager(object):
     """
@@ -119,13 +119,9 @@ class RapidTestManager(object):
                 if test_param['test'] in ['flowsizetest', 'TST009test',
                         'fixed_rate', 'increment_till_fail']:
                     test = FlowSizeTest(test_param,
-                            test_params['lat_percentile'],
-                            test_params['runtime'],
-                            test_params['TestName'],
-                            test_params['environment_file'],
+                            test_params,
                             gen_machine,
-                            sut_machine, background_machines,
-                            test_params['sleep_time'])
+                            sut_machine, background_machines)
                 elif test_param['test'] in ['corestatstest']:
                     test = CoreStatsTest(test_param,
                             test_params['runtime'],
