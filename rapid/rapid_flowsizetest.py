@@ -41,8 +41,8 @@ class FlowSizeTest(RapidTest):
         self.gen_machine = gen_machine
         self.sut_machine = sut_machine
         self.background_machines = background_machines
-        self.test['lat_percentile'] = lat_percentile
-        self.test['sleep_time'] = sleep_time
+        self.test['lat_percentile'] = test_params['lat_percentile']
+        self.test['sleep_time'] = test_params['sleep_time']
         if 'power_helper' in test_params.keys():
             self.test['power_helper'] = test_params['power_helper']
         if self.test['test'] == 'TST009test':
