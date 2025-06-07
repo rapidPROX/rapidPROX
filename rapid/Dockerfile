@@ -60,7 +60,7 @@ RUN git checkout v${DPDK_VERSION}
 RUN meson build -Dlibdir=lib/x86_64-linux-gnu -Denable_driver_sdk=true \
 	-Ddefault_library=shared \
 	-Dcpu_instruction_set=generic \
-	& ninja -C build install
+	&& ninja -C build install
 
 WORKDIR ${BUILD_DIR}
 
