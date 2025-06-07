@@ -232,7 +232,8 @@ class K8sDeployment:
             # Search for POD spec
             if self._create_config.has_option("PUSHGW",
                                               "spec_file_name"):
-                    "PUSHGW", "spec_file_name")
+                pod_spec_file_name = self._create_config.get(
+                        "PUSHGW", "spec_file_name")
             else:
                 pod_spec_file_name = "pushgateway.yaml"
 
