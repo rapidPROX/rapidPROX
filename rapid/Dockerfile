@@ -91,7 +91,7 @@ RUN ldd ${BUILD_DIR}/prox | awk '$2 ~ /=>/ {print $3}' >> ${BUILD_DIR}/list_of_i
 	&& echo "${BUILD_DIR}/dpdk_version" >> ${BUILD_DIR}/list_of_install_components \
 	&& echo "${BUILD_DIR}/start.sh" >> ${BUILD_DIR}/list_of_install_components \
 	&& echo "${BUILD_DIR}/rapid_rsa_key.pub" >> ${BUILD_DIR}/list_of_install_components \
-	&& find /usr/local/lib/x86_64-linux-gnu -not -path '*/\.*' >> ${BUILD_DIR}/list_of_install_components \
+	&& find /usr/local/lib/x86_64-linux-gnu -name *.so -not -path '*/\.*' >> ${BUILD_DIR}/list_of_install_components \
 	&& tar -czvhf ${BUILD_DIR}/install_components.tgz -T ${BUILD_DIR}/list_of_install_components
 
 ################################
@@ -103,8 +103,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install Runtime  Dependencies
 # Install required dynamically linked libraries + required packages
 RUN apt-get update
-RUN apt -y install unzip sudo openssh-server liblua5.3-dev libibverbs-dev
-#RUN apt -y install libatomic1
+RUN apt -y install unzip sudo openssh-server liblua5.3-0 libatomic1 libibverbs1
 
 ARG BUILD_DIR="/opt/rapid"
 ENV BUILD_DIR=${BUILD_DIR}
