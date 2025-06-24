@@ -19,11 +19,11 @@
 # Build all components in separate builder image #
 ##################################################
 
-FROM ubuntu:24.04 as builder
+FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install Dependencies
-# libibverbs-dev is to support Mellenox cards (no OFED installation needed) 
+# libibverbs-dev is to support Mellanox cards (no OFED installation needed) 
 RUN apt-get update && apt -y install git wget \
 	gcc unzip libpcap-dev libncurses5-dev \
 	libedit-dev liblua5.3-dev linux-headers-generic iperf3 pciutils \
