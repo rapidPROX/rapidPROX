@@ -122,7 +122,7 @@ class Pod:
 
             if self._name != "pushgateway":
 #                self.body['metadata']['annotations'] = {'k8s.v1.cni.cncf.io/networks': self._namespace + '/sriov-network-rapid'}
-                self.body['metadata']['annotations'] = {'k8s.v1.cni.cncf.io/networks': 'sriov-network-operator/sriov-network-rapid'}
+                self.body['metadata']['annotations'] = {'k8s.v1.cni.cncf.io/networks': 'sriov-operator/sriov-network-rapid'}
             self._log.debug("Creating POD, body:\n%s" % self.body)
             try:
                 if self._pod_nodeport:
@@ -258,6 +258,12 @@ class Pod:
             self._log.debug("No QAT devices for this pod")
             self.qat_vf = None
 
+    def extract_first_pci_address(self, text):
+        # PCI-address pattern: 4 hex numbers : 2 hex numbers : 2 hex numbers . 1 number
+        pattern = r'\b[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-7]\b'
+        match = re.search(pattern, text)
+        return match.group(0) if match else None
+
     def get_sriov_dev_mac(self):
         """Get assigned by k8s SRIOV network device plugin SRIOV VF devices.
         Return 0 in case of sucessfull configuration.
@@ -274,8 +280,7 @@ class Pod:
         self._log.debug("Environment variable %s" % cmd_output)
 
         # Parse environment variable
-        cmd_output = cmd_output.split("=")[1]
-        self._sriov_vf = cmd_output.split(",")[0]
+        self._sriov_vf = self.extract_first_pci_address(cmd_output)
         self._log.debug("Using first SRIOV VF %s" % self._sriov_vf)
 
         # find DPDK version
@@ -328,6 +333,9 @@ class Pod:
 
     def set_dp_mac(self, dp_mac):
         self._sriov_vf_mac = dp_mac
+
+    def set_dp_pci_dev(self, sriov_vf):
+        self._sriov_vf = sriov_vf
 
     def set_dp_subnet(self, dp_subnet):
         self._dp_subnet = dp_subnet
