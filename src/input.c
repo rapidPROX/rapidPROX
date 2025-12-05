@@ -20,6 +20,8 @@
 
 #include "clock.h"
 #include "input.h"
+#include <sys/time.h>
+#include <sys/select.h>
 
 static struct input *inputs[32];
 static int n_inputs;

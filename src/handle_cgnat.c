@@ -14,7 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
-
 #include <rte_mbuf.h>
 #include <rte_hash.h>
 #include <rte_hash_crc.h>
@@ -40,6 +39,18 @@
 #include "hash_entry_types.h"
 #include "prox_shared.h"
 #include "handle_cgnat.h"
+
+#if defined(__aarch64__)
+	#warning "handle_cgnat.c disabled on ARM (uses x86 SSE instructions)"
+void task_cgnat_dump_public_hash(struct task_nat *task)
+{
+}
+
+void task_cgnat_dump_private_hash(struct task_nat *task)
+{
+}
+#else
+
 
 #define ALL_32_BITS 0xffffffff
 #define BIT_16_TO_31 0xffff0000
@@ -989,3 +1000,4 @@ __attribute__((constructor)) static void reg_task_nat(void)
 {
 	reg_task(&task_init_nat);
 }
+#endif // __aarch64__

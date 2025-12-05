@@ -14,6 +14,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
+#if defined(__aarch64__)
+	#warning "handle_lb_5tuple.c disabled on ARM (no SSE support)"
+	void dummy_handle_lb_5tuple(void) {}
+#else
 
 #include <rte_common.h>
 #ifndef __rte_cache_aligned
@@ -147,3 +151,4 @@ __attribute__((constructor)) static void reg_task_lb_5tuple(void)
 {
 	reg_task(&task_init_lb_5tuple);
 }
+#endif /* __aarch64__ */

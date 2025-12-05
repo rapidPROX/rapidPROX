@@ -14,7 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 */
-
 #include <rte_common.h>
 #ifndef __rte_cache_aligned
 #include <rte_memory.h>
@@ -58,6 +57,58 @@
 #include "defines.h"
 #include "prox_ipv6.h"
 #include "handle_lb_5tuple.h"
+
+#if defined(__aarch64__)
+	#warning "handle_gen.c disabled on ARM (x86-only flow hashing)"
+void task_gen_reset_ranges(struct task_base *tbase)
+{
+}
+uint32_t task_gen_get_n_ranges(struct task_base *tbase)
+{
+	return 0;
+}
+void task_gen_reset_values(struct task_base *tbase)
+{
+}
+
+uint32_t task_gen_get_n_randoms(struct task_base *tbase)
+{
+	return 0;
+}
+void task_gen_reset_randoms(struct task_base *tbase)
+{
+}
+void task_gen_set_pkt_count(struct task_base *tbase, uint32_t count)
+{
+}
+int task_gen_set_pkt_size(struct task_base *tbase, uint32_t pkt_size)
+{
+	return -1;
+}
+
+int task_gen_set_imix(struct task_base *tbase, uint32_t nb_pkt_sizes, uint32_t *pkt_sizes)
+{
+	return -1;
+}
+void task_gen_set_rate(struct task_base *tbase, uint64_t bps)
+{
+}
+int task_gen_add_range(struct task_base *tbase, struct range *range)
+{
+	return -1;
+}
+
+int task_gen_add_rand(struct task_base *tbase, const char *rand_str, uint32_t offset, uint32_t rand_id)
+{
+	return -1;
+}
+int task_gen_set_value(struct task_base *tbase, uint32_t value, uint32_t offset, uint32_t len)
+{
+	return -1;
+}
+
+#else
+
 
 struct pkt_template {
 	uint16_t len;
@@ -1975,3 +2026,4 @@ __attribute__((constructor)) static void reg_task_gen(void)
 	reg_task(&task_init_gen_l3);
 	reg_task(&task_init_gen_pcap);
 }
+#endif // __aarch64__

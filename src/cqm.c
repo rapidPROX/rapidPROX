@@ -46,6 +46,110 @@ struct reg {
 	uint32_t edx;
 };
 
+#if defined(__aarch64__) || defined(__arm__)
+/* ---------- ARM STUB IMPLEMENTATION (no RDT/CQM support) ---------- */
+#warning "CQM/RDT disabled on ARM"
+
+static void cpuid(struct reg* r, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
+}
+
+void read_rdt_info(void)
+{
+}
+int mbm_is_supported(void)
+{
+	return 0;
+}
+
+int mba_is_supported(void)
+{
+	return 0;
+}
+
+int cmt_is_supported(void)
+{
+	return 0;
+}
+
+int cat_is_supported(void)
+{
+	return 0;
+}
+
+int rdt_is_supported(void)
+{
+	return 0;
+}
+
+int rdt_get_features(struct rdt_features* feat)
+{
+	if (!cmt_is_supported() && !cat_is_supported())
+		return 1;
+
+	*feat = rdt_features;
+	return 0;
+}
+
+int cqm_assoc(uint8_t lcore_id, uint64_t rmid)
+{
+	return -1;
+}
+
+int cqm_assoc_read(uint8_t lcore_id, uint64_t *rmid)
+{
+	(void)lcore_id;
+	(void)rmid;
+	return -1;   // or 0, if you prefer "no-op success"
+}
+
+void rdt_init_stat_core(uint8_t lcore_id)
+{
+	stat_core = lcore_id;
+}
+
+/* read a specific rmid value using core 0 */
+int cmt_read_ctr(uint64_t* ret, uint64_t rmid, uint8_t lcore_id)
+{
+	return -1;
+}
+
+int mbm_read_tot_bdw(uint64_t* ret, uint64_t rmid, uint8_t lcore_id)
+{
+	return -1;
+}
+
+int mbm_read_loc_bdw(uint64_t* ret, uint64_t rmid, uint8_t lcore_id)
+{
+	return -1;
+}
+
+int cat_log_init(uint8_t lcore_id)
+{
+	return -1;
+}
+
+int cat_set_class_mask(uint8_t lcore_id, uint32_t set, uint32_t mask)
+{
+	return -1;
+}
+
+int cat_get_class_mask(uint8_t lcore_id, uint32_t set, uint32_t *mask)
+{
+	return -1;
+}
+
+void cat_reset_cache(uint32_t lcore_id)
+{
+}
+
+int cat_get_num_ways(void)
+{
+	return rdt_features.cat_num_ways;
+}
+
+#else /* !ARM -> original x86 implementation */
+
 static void cpuid(struct reg* r, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
 {
 	asm volatile("cpuid"
@@ -309,3 +413,5 @@ int cat_get_num_ways(void)
 {
 	return rdt_features.cat_num_ways;
 }
+
+#endif
