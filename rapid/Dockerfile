@@ -22,13 +22,20 @@
 FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Dependencies
-# libibverbs-dev is to support Mellanox cards (no OFED installation needed) 
-RUN apt-get update && apt -y install git wget \
-	gcc unzip libpcap-dev libncurses5-dev \
+### ---------------------------------------------------------------
+### Install all required packages (ARM-friendly)
+### Must combine update + install in ONE layer
+### Must remove apt lists afterwards to keep image small
+### libibverbs-dev is to support Mellanox cards (no OFED installation needed) 
+### ---------------------------------------------------------------
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y \
+	git wget gcc unzip libpcap-dev libncurses5-dev \
 	libedit-dev liblua5.3-dev linux-headers-generic iperf3 pciutils \
 	libnuma-dev vim tuna make driverctl openssh-server sudo \
-	meson python3-pyelftools pkg-config nasm libssl-dev libibverbs-dev
+	meson python3-pyelftools pkg-config nasm libssl-dev libibverbs-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG DPDK_VERSION=24.11.2
 ENV DPDK_VERSION=${DPDK_VERSION}
@@ -57,10 +64,14 @@ RUN if [ ${MULTI_BUFFER_LIB_VER} != None ] ; then \
 RUN git clone https://github.com/DPDK/dpdk.git
 WORKDIR ${BUILD_DIR}/dpdk
 RUN git checkout v${DPDK_VERSION}
-RUN meson build -Dlibdir=lib/x86_64-linux-gnu -Denable_driver_sdk=true \
-	-Ddefault_library=shared \
-	-Dcpu_instruction_set=generic \
-	&& ninja -C build install
+RUN meson setup build \
+    --buildtype=release \
+    -Denable_driver_sdk=true \
+    -Ddefault_library=shared \
+    -Dcpu_instruction_set=generic \
+#    -Dlibdir=lib/aarch64-linux-gnu \
+#    -Dlibdir=lib/x86_64-linux-gnu \
+    && ninja -C build install
 
 WORKDIR ${BUILD_DIR}
 
@@ -91,7 +102,8 @@ RUN ldd ${BUILD_DIR}/prox | awk '$2 ~ /=>/ {print $3}' >> ${BUILD_DIR}/list_of_i
 	&& echo "${BUILD_DIR}/dpdk_version" >> ${BUILD_DIR}/list_of_install_components \
 	&& echo "${BUILD_DIR}/start.sh" >> ${BUILD_DIR}/list_of_install_components \
 	&& echo "${BUILD_DIR}/rapid_rsa_key.pub" >> ${BUILD_DIR}/list_of_install_components \
-	&& find /usr/local/lib/x86_64-linux-gnu -not -path '*/\.*' >> ${BUILD_DIR}/list_of_install_components \
+	&& LIBDIR=$(pkg-config --variable=libdir libdpdk) \
+	&& find "$LIBDIR" -not -path '*/\.*' >> ${BUILD_DIR}/list_of_install_components \
 	&& tar -czvhf ${BUILD_DIR}/install_components.tgz -T ${BUILD_DIR}/list_of_install_components
 
 ################################
@@ -100,11 +112,16 @@ RUN ldd ${BUILD_DIR}/prox | awk '$2 ~ /=>/ {print $3}' >> ${BUILD_DIR}/list_of_i
 FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Runtime  Dependencies
-# Install required dynamically linked libraries + required packages
-RUN apt-get update
-RUN apt -y install unzip sudo openssh-server liblua5.3-dev libibverbs-dev
-#RUN apt -y install libatomic1
+### ---------------------------------------------------------------
+### Install all required packages (ARM-friendly)
+### Must combine update + install in ONE layer
+### Must remove apt lists afterwards to keep image small
+### ---------------------------------------------------------------
+RUN apt-get update && \
+	DEBIAN_FRONTEND=noninteractive \
+	apt-get install -y \
+		unzip sudo openssh-server liblua5.3-dev libibverbs-dev \
+	&& rm -rf /var/lib/apt/lists/*
 
 ARG BUILD_DIR="/opt/rapid"
 ENV BUILD_DIR=${BUILD_DIR}
