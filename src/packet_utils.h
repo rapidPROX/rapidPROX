@@ -26,6 +26,7 @@
 #include "defaults.h"
 #include "prox_cfg.h"
 #include "etypes.h"
+#include "stdlib.h"
 
 #define FLAG_DST_MAC_KNOWN	1
 #define MAX_ARP_ENTRIES	65536

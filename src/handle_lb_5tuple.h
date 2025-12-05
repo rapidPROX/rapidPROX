@@ -28,7 +28,10 @@ union ipv4_5tuple_host {
 		uint16_t port_src;
 		uint16_t port_dst;
 	};
+#if defined(__x86_64__) || defined(__i386__)
 	__m128i xmm;
+
+#endif
 };
 
 #endif /* _HANDLE_LB_TUP_H_ */

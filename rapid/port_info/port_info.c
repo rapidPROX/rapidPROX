@@ -16,6 +16,7 @@
 */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <inttypes.h>
 #include <rte_eal.h>
 #include <rte_ethdev.h>

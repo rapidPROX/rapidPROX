@@ -20,10 +20,30 @@
 
 #include <rte_mbuf.h>
 
+#ifndef _PROX_PREFETCH_H_
+#define _PROX_PREFETCH_H_
+
+// x86/x86_64 non-temporal prefetch
+#if defined(__x86_64__) || defined(__i386__)
+
 static inline void prefetch_nta(volatile void *p)
 {
 	asm volatile ("prefetchnta %[p]" : [p] "+m" (*(volatile char *)p));
 }
+// ARM AArch64 prefetch (use nearest equivalent)
+#elif defined(__aarch64__)
+static inline void prefetch_nta(volatile void *p)
+{
+	__builtin_prefetch((const void *)p, 0, 3);  // high temporal locality
+}
+// Other architectures: do nothing
+#else
+static inline void prefetch_nta(volatile void *p)
+{
+	(void)p;
+}
+#endif
+#endif /* _PROX_PREFETCH_H_ */
 
 #ifdef PROX_PREFETCH_OFFSET
 #define PREFETCH0(p)		rte_prefetch0(p)

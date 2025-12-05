@@ -183,13 +183,15 @@ static void stop_swap(struct task_base *tbase)
 
 static void handle_ipv6(struct task_swap *task, struct rte_mbuf *mbufs, prox_rte_ipv6_hdr *ipv6_hdr, uint8_t *out)
 {
-	__m128i ip =  _mm_loadu_si128((__m128i*)&(ipv6_hdr->src_addr));
 	uint16_t port;
 	uint16_t payload_len;
 	prox_rte_udp_hdr *udp_hdr;
+	uint8_t ip[16];
 
-	rte_mov16((uint8_t *)&(ipv6_hdr->src_addr), (uint8_t *)&(ipv6_hdr->dst_addr));	// Copy dst into src
-	rte_mov16((uint8_t *)&(ipv6_hdr->dst_addr), (uint8_t *)&ip);			// Copy src into dst
+	rte_mov16(ip, (uint8_t *)&(ipv6_hdr->src_addr));
+	rte_mov16((uint8_t *)&(ipv6_hdr->src_addr), (uint8_t *)&(ipv6_hdr->dst_addr));
+	rte_mov16((uint8_t *)&(ipv6_hdr->dst_addr), ip);
+
 	switch(ipv6_hdr->proto) {
 		case IPPROTO_TCP:
 		case IPPROTO_UDP:
