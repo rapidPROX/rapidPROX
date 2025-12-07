@@ -144,9 +144,7 @@ class RapidTestManager(object):
                             sut_machine, background_machines)
                 elif test_param['test'] in ['irqtest']:
                     test = IrqTest(test_param,
-                            test_params['runtime'],
-                            test_params['TestName'],
-                            test_params['environment_file'],
+                            test_params,
                             self.machines)
                 elif test_param['test'] in ['warmuptest']:
                     test = WarmupTest(test_param,

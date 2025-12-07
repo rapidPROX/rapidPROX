@@ -46,10 +46,8 @@ FlowSizeTest:
     Extent: extent
     Duplicated: duplicate
 IrqTest:
-  Environment: environment_file
-  Test: test
-  Buckets: buckets
-  Machine_data: machine_data
+  Score: AverageScore
+  MinScore: WorstScore
 ImpairTest:
   Environment: environment_file
   Test: test

@@ -312,6 +312,8 @@ class FlowSizeTest(RapidTest):
                     tot_avg_rx_rate = end_data['pps_rx'] + (end_data['avg_bg_rate'] * len(self.background_machines))
                     endtotaltrafficrate = '|        | Total amount of traffic received by all generators during this test: {:>4.3f} Gb/s {:7.3f} Mpps {} |'.format(RapidTest.get_speed(tot_avg_rx_rate,size) , tot_avg_rx_rate, ' '*95)
                     RapidLog.info (endtotaltrafficrate)
+                else:
+                    tot_avg_rx_rate = end_data['pps_rx']
                 if endwarning:
                     RapidLog.info (endwarning)
                 if self.test['test'] != 'fixed_rate':

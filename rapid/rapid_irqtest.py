@@ -29,9 +29,11 @@ class IrqTest(RapidTest):
     """
     Class to manage the irq testing
     """
-    def __init__(self, test_param, runtime, testname, environment_file,
-            machines):
-        super().__init__(test_param, runtime, testname, environment_file)
+    def __init__(self, test_param, test_params, machines):
+        if 'push_gw' in test_params.keys():
+            push_gw = test_params['push_gw']
+        super().__init__(test_param, test_params['runtime'], test_params['TestName'],
+                test_params['environment_file'], push_gw)
         self.machines = machines
 
     def run(self):
@@ -45,6 +47,7 @@ class IrqTest(RapidTest):
         sys.stdout.flush()
         max_loop_duration = 0
         machine_details = {}
+        final_scores = [] # 100 means absolute Success
         for machine in self.machines:
             buckets=machine.socket.show_irq_buckets(machine.get_cores()[0])
             if max_loop_duration == 0:
@@ -73,16 +76,28 @@ class IrqTest(RapidTest):
             time.sleep(float(self.test['runtime']))
             row_names = []
             for i,irqcore in enumerate(machine.get_cores()):
+                score = 100
                 row_names.append(irqcore)
                 for j,bucket in enumerate(buckets):
                     diff =  machine.socket.irq_stats(irqcore,j) - old_irq[i][j]
                     if diff == 0:
                         irq[i][j] = '0'
                     else:
-                        irq[i][j] = str(round(old_div(diff,
-                            float(self.test['runtime'])), 2))
+                        irq[i][j] = round(old_div(diff,
+                            float(self.test['runtime'])), 2)
                         if max_loop_duration < int(bucket):
                             max_loop_duration = int(bucket)
+                        score = score if j == 0 else max(
+                                0, score - irq[i][j] * j * 10 ** (j - 3))
+                        # We start at 100 which is the maximum and thus best score
+                        # For each core we subtract a penalty as calculated in the
+                        # above formula. In the ideal situation all iterations are
+                        # in the first bucket, hence no penalty is subtracted for
+                        # the first bucket. With each following bucket, a heavier
+                        # penalty is substracted, until we are at 0, which is the
+                        # worst score possible
+                        irq[i][j] = str(irq[i][j])
+                final_scores.append(score)
             # Measurements in the loop above, are updated by PROX every second
             # This means that taking the same measurement 0.5 second later
             # might result in the same data or data from the next 1s window
@@ -103,5 +118,7 @@ class IrqTest(RapidTest):
                 core_details['Core {}'.format(row_names[j])] = row
             machine_details[machine.name] = core_details
         result_details['machine_data'] = machine_details
+        result_details['AverageScore'] = sum(final_scores)/len(final_scores)
+        result_details['WorstScore'] = min(final_scores)
         result_details = self.post_data(result_details)
         return (500000 - max_loop_duration, result_details)
