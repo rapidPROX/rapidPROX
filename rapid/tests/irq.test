@@ -18,7 +18,7 @@
 [TestParameters]
 name = IRQTesting
 number_of_tests = 1
-total_number_of_test_machines = 2 
+total_number_of_test_machines = 1 
 
 [TestM1]
 name = InterruptTestMachine1

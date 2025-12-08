@@ -35,6 +35,8 @@ class IrqTest(RapidTest):
         super().__init__(test_param, test_params['runtime'], test_params['TestName'],
                 test_params['environment_file'], push_gw)
         self.machines = machines
+        if 'power_helper' in test_params.keys():
+            self.test['power_helper'] = test_params['power_helper']
 
     def run(self):
         RapidLog.info("+----------------------------------------------------------------------------------------------------------------------------+")
@@ -117,8 +119,13 @@ class IrqTest(RapidTest):
                         ''.join(['{:>12}'.format(item) for item in row]))
                 core_details['Core {}'.format(row_names[j])] = row
             machine_details[machine.name] = core_details
+        if 'power_helper' in self.test.keys():
+            result_details['Sys'],result_details['Cpu'],result_details['Ram'] = self.test['power_helper'].get_power()
+        else:
+            result_details['Sys'],result_details['Cpu'],result_details['Ram'] = 0,0,0
         result_details['machine_data'] = machine_details
         result_details['AverageScore'] = sum(final_scores)/len(final_scores)
         result_details['WorstScore'] = min(final_scores)
         result_details = self.post_data(result_details)
+        result_details['data_push'] = self.data_push
         return (500000 - max_loop_duration, result_details)

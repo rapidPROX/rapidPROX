@@ -8,16 +8,16 @@ Format: PushGateway
 URL:
   part1: /metrics/job/rapid/
 FlowSizeTest:                           
-  Flows: Flows                                                                                  
-  Size: Size                                                                                    
-  Sent: abs_tx                      
-  Total: TotalTrafficRate                                                                       
-  RevByCore: pps_rx                                                                             
-  PCTLatency: lat_perc               
-  Lost: abs_dropped                                                                             
-  SystemPower: Sys                                                                              
+  Flows: Flows
+  Size: Size
+  Sent: abs_tx
+  Total: TotalTrafficRate
+  RevByCore: pps_rx
+  PCTLatency: lat_perc
+  Lost: abs_dropped
+  SystemPower: Sys
   CPUPower: Cpu
-  RAMPower: Ram   
+  RAMPower: Ram
 ;FlowSizeTest:
   Environment: environment_file
   Test: test
@@ -46,8 +46,11 @@ FlowSizeTest:
     Extent: extent
     Duplicated: duplicate
 IrqTest:
-  Score: AverageScore
+  Total: AverageScore
   MinScore: WorstScore
+  SystemPower: Sys
+  CPUPower: Cpu
+  RAMPower: Ram
 ImpairTest:
   Environment: environment_file
   Test: test
