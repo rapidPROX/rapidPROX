@@ -612,6 +612,14 @@ static void draw_log_window(void)
 	wrefresh(win_txt);
 }
 
+static void safe_delwin(WINDOW **w)
+{
+	if (*w != NULL) {
+		delwin(*w);
+		*w = NULL;
+	}
+}
+
 static void stats_display_layout(uint8_t in_place)
 {
 	uint8_t cur_stats_height;
@@ -622,13 +630,13 @@ static void stats_display_layout(uint8_t in_place)
 	display_lock();
 	if (!in_place) {
 		// moving existing windows does not work
-		delwin(win_txt);
-		delwin(win_general);
-		delwin(win_title);
-		delwin(win_tabs);
-		delwin(win_cmd);
-		delwin(win_txt);
-		delwin(win_help);
+		safe_delwin(&win_txt);
+		safe_delwin(&win_general);
+		safe_delwin(&win_title);
+		safe_delwin(&win_tabs);
+		safe_delwin(&win_cmd);
+		safe_delwin(&win_txt);
+		safe_delwin(&win_help);
 
 		clear();
 	}
