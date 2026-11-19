@@ -137,6 +137,14 @@ Total{instance="",job="rapid"} 171.79510539276112
 
 of which ```RevByCore``` is the Mpps result.
 
+## Helm chart
+
+A Helm chart at [charts/prox/](./charts/prox/) deploys a configurable-size StatefulSet of `prox` pods on a dedicated Multus network (SR-IOV or PCI passthrough, VLAN and IPAM configurable), plus a `rapid` controller pod already wired up to drive a throughput test between them, and optionally a Pushgateway and Grafana dashboards for the results. See [charts/prox/README.md](./charts/prox/README.md). It is published as an OCI artifact by [.github/workflows/helm-publish.yml](./.github/workflows/helm-publish.yml) on every push to `master` and on version tags `vX.Y.Z`:
+
+```
+helm install prox oci://ghcr.io/<owner>/charts/prox --version <version> -n prox --create-namespace
+```
+
 ## Clean
 
 Delete whole namespace with
@@ -145,6 +153,17 @@ Delete whole namespace with
 cd k8s
 kubectl delete -f 0-ns.yaml
 ```
+
+## CI-published images
+
+The `prox` and `rapid` images are automatically built and published to GitHub Container Registry on every push to `master` (tags `latest` and `sha-<short>`) and on version tags `vX.Y.Z` (which add `X.Y.Z` and `X.Y`), see [.github/workflows/docker-publish.yml](./.github/workflows/docker-publish.yml):
+
+```
+ghcr.io/<owner>/prox:<tag>
+ghcr.io/<owner>/rapid:<tag>
+```
+
+Both images are built from the repository root, so they always reflect the commit being built (`rapid/docker/build.sh` does the same locally). GHCR packages are private when first published; a repository owner needs to set each package to Public once.
 
 ## Validated OS, k8s distribution and server/VM
 
